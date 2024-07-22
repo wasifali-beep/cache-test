@@ -1,0 +1,23 @@
+name: Send Email Notification
+
+on:
+  repository_dispatch:
+    types: pipeline-execution
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Payload
+        run: |
+          echo "Received payload:"
+          echo "${{ toJson(github.event.client_payload) }}"
+
+      - name: Send Email Notification
+        if: ${{ github.event.client_payload.status == 'success' }}
+        run: |
+          # Replace with your email sending logic
+          echo "Pipeline executed successfully. Sending email to wasifali.github@gmail.com."
+          # Example: Using mail command (requires appropriate setup and authentication)
+          echo "Pipeline executed successfully." | mail -s "Pipeline Success Notification" wasifali.github@gmail.com
