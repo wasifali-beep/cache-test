@@ -16,8 +16,23 @@ jobs:
 
       - name: Send Email Notification
         if: ${{ github.event.client_payload.status == 'success' }}
+        env:
+          SMTP_SERVER: smtp.example.com  # Replace with your SMTP server address
+          SMTP_PORT: 587  # Replace with your SMTP server port
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}  # Replace with your SMTP username stored in GitHub Secrets
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}  # Replace with your SMTP password stored in GitHub Secrets
+          EMAIL_TO: wasifali.github@gmail.com  # Replace with the recipient email address
         run: |
-          # Replace with your email sending logic
-          echo "Pipeline executed successfully. Sending email to wasifali.github@gmail.com."
-          # Example: Using mail command (requires appropriate setup and authentication)
-          echo "Pipeline executed successfully." | mail -s "Pipeline Success Notification" wasifali.github@gmail.com
+          echo "Pipeline executed successfully. Sending email notification..."
+          python3 -m smtpd -n -c DebuggingServer localhost:1025 &  # Start a local SMTP debugging server (for testing)
+          python3 -c "import smtplib; \
+                      from email.mime.text import MIMEText; \
+                      msg = MIMEText('Pipeline executed successfully.'); \
+                      msg['Subject'] = 'Pipeline Success Notification'; \
+                      msg['From'] = '${{ secrets.SMTP_USERNAME }}'; \
+                      msg['To'] = '${{ env.EMAIL_TO }}'; \
+                      s = smtplib.SMTP('${{ env.SMTP_SERVER }}', port=${{ env.SMTP_PORT }}); \
+                      s.starttls(); \
+                      s.login('${{ env.SMTP_USERNAME }}', '${{ env.SMTP_PASSWORD }}'); \
+                      s.send_message(msg); \
+                      s.quit();"
