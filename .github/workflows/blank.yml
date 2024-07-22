@@ -18,3 +18,15 @@ jobs:
         
       - name: Display README.md content
         run: cat README.md
+
+      - name: Determine status
+        id: status
+        run: echo "::set-output name=status::success"  # Assuming successful execution; replace with logic based on your actual checks
+      
+      - name: Send status payload
+        if: ${{ always() }}
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.REPO_DISPATCH_TOKEN }}
+          event-type: pipeline-execution
+          client-payload: '{"status": "${{ steps.status.outputs.status }}"}'
