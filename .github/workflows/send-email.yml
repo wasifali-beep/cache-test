@@ -14,25 +14,35 @@ jobs:
           echo "Received payload:"
           echo "${{ toJson(github.event.client_payload) }}"
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install SendGrid
+        run: pip install sendgrid
+
       - name: Send Email Notification
         if: ${{ github.event.client_payload.status == 'success' }}
         env:
-          SMTP_SERVER: smtp.example.com  # Replace with your SMTP server address
-          SMTP_PORT: 587  # Replace with your SMTP server port
-          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}  # Replace with your SMTP username stored in GitHub Secrets
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}  # Replace with your SMTP password stored in GitHub Secrets
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           EMAIL_TO: wasifali.github@gmail.com  # Replace with the recipient email address
+          EMAIL_SUBJECT: 'Pipeline Success Notification'
+          EMAIL_BODY: 'Pipeline executed successfully.'
+          EMAIL_FROM: mwasifali994@gmail.com  # Replace with the sender email address
         run: |
-          echo "Pipeline executed successfully. Sending email notification..."
-          python3 -m smtpd -n -c DebuggingServer localhost:1025 &  # Start a local SMTP debugging server (for testing)
-          python3 -c "import smtplib; \
-                      from email.mime.text import MIMEText; \
-                      msg = MIMEText('Pipeline executed successfully.'); \
-                      msg['Subject'] = 'Pipeline Success Notification'; \
-                      msg['From'] = '${{ secrets.SMTP_USERNAME }}'; \
-                      msg['To'] = '${{ env.EMAIL_TO }}'; \
-                      s = smtplib.SMTP('${{ env.SMTP_SERVER }}', port=${{ env.SMTP_PORT }}); \
-                      s.starttls(); \
-                      s.login('${{ env.SMTP_USERNAME }}', '${{ env.SMTP_PASSWORD }}'); \
-                      s.send_message(msg); \
-                      s.quit();"
+          python -c "import os; \
+          from sendgrid import SendGridAPIClient; \
+          from sendgrid.helpers.mail import Mail; \
+          message = Mail(from_email=os.getenv('EMAIL_FROM'), \
+                         to_emails=os.getenv('EMAIL_TO'), \
+                         subject=os.getenv('EMAIL_SUBJECT'), \
+                         plain_text_content=os.getenv('EMAIL_BODY')); \
+          try: \
+              sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY')); \
+              response = sg.send(message); \
+              print(response.status_code); \
+              print(response.body); \
+              print(response.headers); \
+          except Exception as e: \
+              print(e.message)"
