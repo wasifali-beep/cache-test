@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Print Payload
         run: |
           echo "Received payload:"
@@ -19,7 +22,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install SendGrid
+      - name: Install Dependencies
         run: pip install sendgrid
 
       - name: Send Email Notification
@@ -30,19 +33,4 @@ jobs:
           EMAIL_SUBJECT: 'Pipeline Success Notification'
           EMAIL_BODY: 'Pipeline executed successfully.'
           EMAIL_FROM: mwasifali994@gmail.com  # Replace with the sender email address
-        run: |
-          python -c "import os; \
-          from sendgrid import SendGridAPIClient; \
-          from sendgrid.helpers.mail import Mail; \
-          message = Mail(from_email=os.getenv('EMAIL_FROM'), \
-                         to_emails=os.getenv('EMAIL_TO'), \
-                         subject=os.getenv('EMAIL_SUBJECT'), \
-                         plain_text_content=os.getenv('EMAIL_BODY')); \
-          try: \
-              sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY')); \
-              response = sg.send(message); \
-              print(response.status_code); \
-              print(response.body); \
-              print(response.headers); \
-          except Exception as e: \
-              print(e.message)"
+        run: python send_email.py
